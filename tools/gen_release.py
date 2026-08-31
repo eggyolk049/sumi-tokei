@@ -85,13 +85,13 @@ def draw24(bg="#ffffff", fg="#000000"):
     曲線(円の文字盤)はドット絵だと汚く見えるので使わない(2026-08-31ユーザー指摘)"""
     im = Image.new("RGB", (24, 24), bg)
     d = ImageDraw.Draw(im)
-    d.rectangle([3, 2, 20, 21], outline=fg)    # 枠(帳面。シリーズ同族)
-    d.rectangle([11, 4, 12, 5], fill=fg)       # 目盛り 12時(枠から1px離す。癒着すると枠の瘤に見える)
-    d.rectangle([11, 18, 12, 19], fill=fg)     # 目盛り 6時
+    d.rectangle([3, 3, 20, 20], outline=fg)    # 枠(時計なので正方形。帳面比率の縦長にしない=2026-08-31ユーザー指摘)
+    d.rectangle([11, 5, 12, 6], fill=fg)       # 目盛り 12時(枠から1px離す。癒着すると枠の瘤に見える)
+    d.rectangle([11, 17, 12, 18], fill=fg)     # 目盛り 6時
     d.rectangle([5, 11, 6, 12], fill=fg)       # 目盛り 9時
     d.rectangle([17, 11, 18, 12], fill=fg)     # 目盛り 3時
-    d.rectangle([11, 7, 12, 12], fill=fg)      # 長針(12時へ。目盛りとも1pxあける)
-    d.rectangle([11, 11, 15, 12], fill=fg)     # 短針(3時へ。長針よりみじかく)
+    d.rectangle([11, 8, 12, 12], fill=fg)      # 長針(12時へ。目盛りとも1pxあける)
+    d.rectangle([11, 11, 15, 12], fill=fg)     # 短針(3時へ)
     return im
 
 
