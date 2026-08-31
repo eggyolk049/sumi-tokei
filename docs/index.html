@@ -327,7 +327,7 @@ function fmtRem(ms){ // のこり(切り上げ: 0にならないうちは0と言
   if(s > 60) return Math.floor(s / 60) + '分' + two(s % 60) + '秒';
   return (Math.ceil(ms / 100) / 10).toFixed(1) + '秒';
 }
-function fmtOver(ms){ // 目標からの経過
+function fmtOver(ms){ // まつ時刻からの経過
   const s = Math.floor(ms / 1000);
   if(s >= 60) return '+' + Math.floor(s / 60) + '分' + two(s % 60) + '秒';
   return '+' + s + '秒';
@@ -386,7 +386,7 @@ function renderSheet(){
         + '<button class="sbtn" data-act="cdstop">やめる</button></div></section>'
       : '';
     inner = act
-      + '<section class="box"><h2>目標時刻</h2>'
+      + '<section class="box"><h2>まつ時刻</h2>'
       + '<div class="setrow"><div class="d">よくある時刻からえらぶ(すぎた時刻はあすになります)</div><div class="pgrid">'
       + ['10:00', '11:00', '12:00', '18:00'].map(h => '<button data-act="cdpreset" data-t="' + h + '">' + h + '</button>').join('')
       + '</div></div>'
@@ -400,7 +400,7 @@ function renderSheet(){
       + '<div class="setrow"><button class="sbtn" data-act="vib">' + (data.vib ? 'ふるえ: ふるえる' : 'ふるえ: ふるえない') + '</button>'
       + '<div class="d">Androidのみ。iPhoneはWebの決まりでふるえません。</div></div>'
       + '</section>'
-      + '<p class="help">目標の時刻をきめると、のこり時間が下にみえます。さいごの10秒は画面いっぱいに数え、ちょうどの瞬間に一瞬だけ画面が反転します。</p>';
+      + '<p class="help">まつ時刻をきめると、のこり時間が下にみえます。さいごの10秒は画面いっぱいに数え、ちょうどの瞬間に一瞬だけ画面が反転します。</p>';
   }else{
     inner = '<section class="box"><h2>表示</h2>'
       + '<div class="setrow"><button class="sbtn" data-act="theme">' + themeModeLabel() + '</button></div>'
@@ -412,7 +412,7 @@ function renderSheet(){
       + '</section>'
       + '<section class="box"><h2>つかいかた</h2><div class="setrow"><div class="d">'
       + 'この時計は、日本標準時をつくっている NICT(情報通信研究機構)の時刻配信にあわせて動きます。ひらいたとき・ときどき・秒読みの直前に、自動であわせなおします。<br>'
-      + 'チケットの発売など、時刻ぴったりをまつときは左上の「秒読み」。目標の時刻をきめると、のこり時間がみえます。<br>'
+      + 'チケットの発売など、時刻ぴったりをまつときは左上の「秒読み」。まつ時刻をきめると、のこり時間がみえます。<br>'
       + 'この画面をひらいているあいだ、画面は消灯しません(消えてしまう端末では、自動ロックを長めにしてください)。'
       + '</div></div></section>'
       + '<section class="box"><h2>調子が悪いとき</h2><div class="setrow">'
