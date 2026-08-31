@@ -81,14 +81,17 @@ html = html.rstrip() + "\n" + (
 
 
 def draw24(bg="#ffffff", fg="#000000"):
-    """白地24グリッドの時計モチーフ: 帳面の枠+丸い文字盤+針、下に同期状態の一行(アプリの画面と同じ構図)"""
+    """白地24グリッドの時計モチーフ: 帳面の枠+針と4つの目盛りだけ。
+    曲線(円の文字盤)はドット絵だと汚く見えるので使わない(2026-08-31ユーザー指摘)"""
     im = Image.new("RGB", (24, 24), bg)
     d = ImageDraw.Draw(im)
     d.rectangle([3, 2, 20, 21], outline=fg)    # 枠(帳面。シリーズ同族)
-    d.ellipse([6, 4, 17, 15], outline=fg)      # 文字盤
-    d.rectangle([11, 6, 12, 10], fill=fg)      # 長針(12時へ)
-    d.rectangle([12, 9, 15, 10], fill=fg)      # 短針(3時へ)
-    d.rectangle([6, 18, 17, 18], fill=fg)      # 時計の下の一行(同期状態の行)
+    d.rectangle([11, 4, 12, 5], fill=fg)       # 目盛り 12時(枠から1px離す。癒着すると枠の瘤に見える)
+    d.rectangle([11, 18, 12, 19], fill=fg)     # 目盛り 6時
+    d.rectangle([5, 11, 6, 12], fill=fg)       # 目盛り 9時
+    d.rectangle([17, 11, 18, 12], fill=fg)     # 目盛り 3時
+    d.rectangle([11, 7, 12, 12], fill=fg)      # 長針(12時へ。目盛りとも1pxあける)
+    d.rectangle([11, 11, 15, 12], fill=fg)     # 短針(3時へ。長針よりみじかく)
     return im
 
 
