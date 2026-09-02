@@ -53,8 +53,8 @@ html = html.rstrip() + "\n" + (
 
 (DOCS / "manifest.webmanifest").write_text(json.dumps({
     "id": "/sumi-tokei/",
-    "name": "sumi時計",
-    "short_name": "sumi時計",
+    "name": "chroia時計",
+    "short_name": "時計",
     "description": "秒までわかる。日本標準時にあわせる白黒の時計",
     "lang": "ja",
     "dir": "ltr",

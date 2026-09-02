@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="ja"><meta charset="utf-8">
-<title>sumi時計</title>
+<title>chroia時計</title>
+<meta name="apple-mobile-web-app-title" content="時計">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
@@ -611,8 +612,17 @@ if(/[?&]cd\b/.test(location.search)) openSheet('cd'); // ホーム画面アイ�
 })();
 </script>
 <script>
-if('serviceWorker' in navigator){
-  addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => {}); });
+if('serviceWorker' in navigator && !(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform())){
+  var _hadCtrl = !!navigator.serviceWorker.controller, _swReloaded = false;
+  addEventListener('load', function(){ navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' }).catch(function(){}); });
+  navigator.serviceWorker.addEventListener('controllerchange', function(){
+    if(!_hadCtrl || _swReloaded) return;   /* 初回登録では再読み込みしない */
+    _swReloaded = true; location.reload(); /* 新SWが制御した瞬間に1回だけ */
+  });
+  document.addEventListener('visibilitychange', function(){
+    if(document.visibilityState !== 'visible') return;  /* iOS Safari は更新検知が受動的なので能動的に促す */
+    navigator.serviceWorker.getRegistration().then(function(r){ r && r.update(); }).catch(function(){});
+  });
 }
 </script>
 </html>
