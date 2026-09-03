@@ -1,5 +1,6 @@
 # tokei.html → docs/ 配信一式(index.html + manifest + アイコン + スプラッシュ + SW)を生成する。
 # 使い方: python tools/gen_release.py → git commit → git push → GitHub Pages(docs/)に反映
+import datetime
 import json
 from pathlib import Path
 
@@ -21,6 +22,12 @@ SPLASH = [
 ]
 
 html = SRC.read_text(encoding="utf-8")
+
+# 版数の刻印(正典: 図鑑 tools/build.py)。設定の最下段に出て、タップで更新確認になる
+APP_VER_ANCHOR = "const APP_VER = 'dev'; // 公開ビルド時にbuild.pyがスタンプする"
+assert html.count(APP_VER_ANCHOR) == 1, "NG: APP_VERアンカーが見つからない"
+STAMP = datetime.datetime.now().strftime("β %Y.%m.%d-%H%M")
+html = html.replace(APP_VER_ANCHOR, "const APP_VER = '" + STAMP + "';")
 
 splash_links = ""
 for w, h, lw, lh, r in SPLASH:
@@ -115,4 +122,4 @@ for w, h, lw, lh, r in SPLASH:
         cv = Image.new("RGB", (w, h), bg)
         cv.save(DOCS / f"splash-{w}x{h}{'-dark' if dark else ''}.png")
 
-print(f"OK: docs/ 一式を生成した(スプラッシュ {len(SPLASH) * 2}枚)")
+print(f"OK: docs/ 一式を生成した(スプラッシュ {len(SPLASH) * 2}枚) 版数 {STAMP}")

@@ -74,8 +74,11 @@ section.box{ border:1px solid var(--fg); margin:0 0 14px; background:var(--bg); 
 section.box > h2{ font-size:11px; font-weight:600; color:var(--muted); letter-spacing:.08em; padding:7px 10px; border-bottom:1px solid var(--faint); margin:0; }
 .setrow{ padding:12px 10px; border-bottom:1px solid var(--faint); }
 .setrow:last-child{ border-bottom:none; }
+.setrow .t{ font-size:13px; }
 .setrow .d{ font-size:11px; color:var(--muted); line-height:1.9; margin:0 0 6px; }
 .setrow .d:last-child{ margin-bottom:0; }
+/* 選択中=反転(規約5.3)。#cdbtn も .on を使うが「秒読み中」の意味なので、設定の中だけに効かせる */
+.setrow button.on{ background:var(--fg); color:var(--bg); }
 button.primary{ width:100%; padding:13px 0; font-size:16px; background:var(--fg); color:var(--bg); }
 .sbtn{ width:100%; margin-top:8px; font-size:14px; padding:11px 0; }
 .setrow .sbtn:first-child{ margin-top:0; }
@@ -86,6 +89,32 @@ button.primary{ width:100%; padding:13px 0; font-size:16px; background:var(--fg)
 .cdrow input{ flex:1 1 auto; min-width:0; font:inherit; font-size:18px; color:var(--fg); background:var(--bg); border:1px solid var(--fg); border-radius:0; padding:10px; font-variant-numeric:tabular-nums; -webkit-appearance:none; appearance:none; }
 .cdrow .go{ flex:0 0 auto; margin:0; width:auto; padding:0 20px; font-size:15px; }
 .syncdetail{ font-size:12px; color:var(--muted); line-height:2; font-variant-numeric:tabular-nums; }
+
+/* ---------- 文字の大きさ3段(統一D-17) ----------
+   時計の数字(#big/#bigsub/#date)は min(vw,vh) で画面いっぱいに収まる大きさが自動で決まるので触らない。
+   ここを大きくすると桁があふれるか、逆に小さくしか出せない。効かせるのは読む文字(設定・秒読みの帯・状態の行)だけ。 */
+html.fs-l body{ font-size:16px; }
+html.fs-xl body{ font-size:17px; }
+html.fs-l .sheet h3{ font-size:14px; }
+html.fs-xl .sheet h3{ font-size:15px; }
+html.fs-l section.box > h2{ font-size:12px; }
+html.fs-xl section.box > h2{ font-size:13px; }
+html.fs-l .setrow .t{ font-size:14px; }
+html.fs-xl .setrow .t{ font-size:15px; }
+html.fs-l .setrow .d, html.fs-l .help{ font-size:12px; }
+html.fs-xl .setrow .d, html.fs-xl .help{ font-size:13px; }
+html.fs-l .sbtn{ font-size:15px; }
+html.fs-xl .sbtn{ font-size:16px; }
+html.fs-l .syncdetail{ font-size:13px; }
+html.fs-xl .syncdetail{ font-size:14px; }
+html.fs-l #cdbtn, html.fs-l #setbtn{ font-size:12px; }
+html.fs-xl #cdbtn, html.fs-xl #setbtn{ font-size:13px; }
+html.fs-l #syncline{ font-size:13px; }
+html.fs-xl #syncline{ font-size:14px; }
+html.fs-l #cdlbl{ font-size:14px; }
+html.fs-xl #cdlbl{ font-size:15px; }
+html.fs-l #cdrem{ font-size:24px; }
+html.fs-xl #cdrem{ font-size:26px; }
 </style>
 
 <div id="app">
@@ -110,6 +139,8 @@ button.primary{ width:100%; padding:13px 0; font-size:16px; background:var(--fg)
 <script>
 'use strict';
 
+const APP_VER = 'dev'; // 公開ビルド時にbuild.pyがスタンプする
+
 /* ---------- 保存 ---------- */
 function lsGet(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
 function lsSet(k, v){ try{ localStorage.setItem(k, v); }catch(e){} }
@@ -131,6 +162,35 @@ function sanitize(d){
 }
 let data = sanitize((() => { try{ return JSON.parse(lsGet(LS_KEY) || 'null'); }catch(e){ return null; } })());
 function save(){ lsSet(LS_KEY, JSON.stringify(data)); }
+
+/* ---------- 端末の保存の保護(データ保全設計 §a-4) ---------- */
+function persistLabel(){ // 端末の保存の保護状態(askPersistが控えた結果)
+  return lsGet('tokei-persist') === 'granted'
+    ? '端末の保存: 保護されています'
+    : '端末の保存: ふつう(端末の空きが少なくなると、消えることがあります)';
+}
+async function askPersist(){ // OSに「このデータは消さないで」と頼み、結果を控える
+  try{
+    if(!navigator.storage || !navigator.storage.persist) return;
+    if(await navigator.storage.persisted()){ lsSet('tokei-persist', 'granted'); }
+    // この時計は記録を持たないので「何件たまったか」で計れない。設定をはじめて変えた=使いはじめた合図とみて、そこで一度だけ頼む
+    else if(!lsGet('tokei-persist')){
+      const ok = await navigator.storage.persist();
+      lsSet('tokei-persist', ok ? 'granted' : 'denied'); // 断られた記録も残す(蒸し返して聞き直さない)
+    }
+  }catch(e){}
+  if(ui.sheet === 'set') renderSheetKeepScroll(); // 保護状態の行を出しなおす
+}
+async function refreshPersist(){ // OSがあとから自動で保護することもあるので、状態だけは起動のたびに控え直す(頼むのはaskPersistの1回きり)
+  try{
+    if(!navigator.storage || !navigator.storage.persisted) return;
+    if(await navigator.storage.persisted()) lsSet('tokei-persist', 'granted');
+  }catch(e){}
+}
+
+/* ---------- 文字の大きさ(この端末の表示設定・統一D-17) ---------- */
+function fsMode(){ return lsGet('tokei-fs') || 'm'; }
+function applyFsMode(){ const de = document.documentElement; de.classList.toggle('fs-l', fsMode() === 'l'); de.classList.toggle('fs-xl', fsMode() === 'xl'); }
 
 /* ---------- 日本標準時とあわせる ----------
    3段がまえ: (1) NICTの時刻配信(日本標準時の大元。往復の半分を差し引く)
@@ -388,10 +448,18 @@ function renderSheet(){
       + '<div class="setrow"><button class="sbtn" data-act="theme">' + themeModeLabel() + '</button></div>'
       + '<div class="setrow"><button class="sbtn" data-act="fine">' + (data.fine ? '0.1秒: みせる' : '0.1秒: みせない') + '</button>'
       + '<div class="d">秒のつぎのケタまで表示します。</div></div>'
+      + '<div class="setrow"><div class="t">文字の大きさ</div>'
+      + '<div style="display:flex;gap:8px;margin-top:8px">'
+      + [['m', '標準'], ['l', '大きめ'], ['xl', '特大']].map(p => '<button data-act="fs-set" data-v="' + p[0] + '" class="' + (fsMode() === p[0] ? 'on' : '') + '" style="flex:1;padding:11px 0">' + p[1] + '</button>').join('')
+      + '</div>'
+      + '<div class="d" style="margin-top:8px">設定と秒読みの文字が大きくなります。時計の数字は、いつも画面いっぱいの大きさです。</div></div>'
       + '</section>'
       + '<section class="box"><h2>同期</h2>'
       + '<div class="setrow">' + syncDetailHtml() + '<button class="sbtn" data-act="resync">いますぐあわせる</button></div>'
       + '</section>'
+      + '<section class="box"><h2>保存について</h2><div class="setrow"><div class="d">'
+      + '設定と秒読みは、この端末の中だけにあります(通信で送っているのは時刻あわせだけです)。<br>' + persistLabel()
+      + '</div></div></section>'
       + '<section class="box"><h2>つかいかた</h2><div class="setrow"><div class="d">'
       + 'この時計は、日本標準時をつくっている NICT(情報通信研究機構)の時刻配信にあわせて動きます。ひらいたとき・ときどき・秒読みの直前に、自動であわせなおします。<br>'
       + 'チケットの発売など、時刻ぴったりをまつときは左上の「秒読み」。まつ時刻をきめると、のこり時間がみえます。<br>'
@@ -399,7 +467,8 @@ function renderSheet(){
       + '</div></div></section>'
       + '<section class="box"><h2>調子が悪いとき</h2><div class="setrow">'
       + '<div class="d">時刻があやしいときは、上の「いますぐあわせる」。それでも合わないときは、通信(VPN・フィルタリング)をたしかめてから、さいよみこみしてください。</div>'
-      + '<button class="sbtn" data-act="reload">さいよみこみ</button></div></section>';
+      + '<button class="sbtn" data-act="reload">さいよみこみ</button></div></section>'
+      + '<p class="d" data-act="ver-reload" style="text-align:center;margin:4px 0 2px;color:var(--muted);font-size:11px">chroia時計 ' + APP_VER + ' — タップで更新を確認</p>';
   }
   el.ovl.innerHTML = '<div class="overlay" data-act="close"><div class="sheet" data-act="noop">'
     + '<div class="shrow"><h3>' + (ui.sheet === 'cd' ? '秒読み' : 'せってい') + '</h3><button class="shx" data-act="close" aria-label="とじる">✕</button></div>'
@@ -508,19 +577,29 @@ function tick(){
 }
 
 /* ---------- 入力 ---------- */
+let lastScroll = 0; // 慣性スクロール停止タップの誤反応防止(改善S-4・正典)
+document.addEventListener('scroll', () => { lastScroll = Date.now(); }, { capture: true, passive: true });
 document.addEventListener('click', e => {
   const b = e.target.closest('[data-act]');
   if(!b) return;
+  // 動いているのはシートの中身だけ。時計まわりの固定UI(#top・#mid・#cdbar)は指の下からずれないので、待たせない
+  if(Date.now() - lastScroll < 300 && !b.closest('#top, #mid, #cdbar')) return;
   const act = b.getAttribute('data-act');
   if(act === 'noop') return;
   else if(act === 'cdsheet') openSheet('cd');
   else if(act === 'sheet') openSheet('set');
   else if(act === 'close') closeSheet();
   else if(act === 'resync'){ audio(); syncNow(); }
-  else if(act === 'theme') cycleThemeMode();
-  else if(act === 'fine'){ data.fine = !data.fine; save(); document.body.classList.toggle('fine', data.fine); renderSheetKeepScroll(); tick(); }
-  else if(act === 'snd'){ data.snd = !data.snd; save(); if(data.snd) audio(); renderSheetKeepScroll(); }
-  else if(act === 'vib'){ data.vib = !data.vib; save(); if(data.vib) vib(30); renderSheetKeepScroll(); }
+  else if(act === 'theme'){ cycleThemeMode(); askPersist(); }
+  else if(act === 'fine'){ data.fine = !data.fine; save(); document.body.classList.toggle('fine', data.fine); renderSheetKeepScroll(); tick(); askPersist(); }
+  else if(act === 'fs-set'){ lsSet('tokei-fs', b.getAttribute('data-v')); applyFsMode(); renderSheetKeepScroll(); askPersist(); }
+  else if(act === 'snd'){ data.snd = !data.snd; save(); if(data.snd) audio(); renderSheetKeepScroll(); askPersist(); }
+  else if(act === 'vib'){ data.vib = !data.vib; save(); if(data.vib) vib(30); renderSheetKeepScroll(); askPersist(); }
+  else if(act === 'ver-reload'){ // 版数行タップ=更新の確認(SWに新しい版をさがさせてから読み込み直す)
+    b.textContent = '更新を確認しています…';
+    if('serviceWorker' in navigator) navigator.serviceWorker.getRegistration().then(r => { if(r) r.update(); }).catch(() => {});
+    setTimeout(() => location.reload(), 900);
+  }
   else if(act === 'cdpreset') startCd(b.getAttribute('data-t'));
   else if(act === 'cdstart'){
     const v = (document.getElementById('cdtime') || {}).value;
@@ -550,6 +629,8 @@ document.addEventListener('visibilitychange', () => {
 /* ---------- 起動 ---------- */
 if(data.cd && data.cd.t <= Date.now()) ui.fired = true; // すぎた秒読みをひらきなおしても合図はならさない
 applyThemeMode();
+applyFsMode();
+refreshPersist(); // 設定をひらいたときに「ふつう」と嘘をつかないよう、実際の保護状態を先に控える
 render();
 keepAwake();
 syncNow();
