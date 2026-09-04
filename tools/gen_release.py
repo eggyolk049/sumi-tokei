@@ -2,14 +2,19 @@
 # 使い方: python tools/gen_release.py → git commit → git push → GitHub Pages(docs/)に反映
 import datetime
 import json
+import shutil
 from pathlib import Path
 
-from PIL import Image, ImageDraw
+from PIL import Image
 
 ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / "tokei.html"
 DOCS = ROOT / "docs"
 DOCS.mkdir(exist_ok=True)
+
+# アイコンの正典は シリーズ管理/アイコン案_2026-09-04/final/tokei/。差し替えはそこを直してビルド
+ICON_SRC = ROOT.parent / "シリーズ管理" / "アイコン案_2026-09-04" / "final" / "tokei"
+assert ICON_SRC.is_dir(), f"NG: アイコンの正典が見つからない: {ICON_SRC}"
 
 # 起動スプラッシュの対象サイズ(実ピクセル, 論理px, 倍率)。iPhoneの新画面が出たらここに足す
 SPLASH = [
@@ -81,39 +86,14 @@ html = html.rstrip() + "\n" + (
     ],
 }, ensure_ascii=False, indent=1) + "\n", encoding="utf-8", newline="\n")
 
+# アイコン(正典からのコピー。図形生成はしない)
+for name in ("icon-192.png", "icon-512.png", "icon-maskable-512.png", "apple-touch-icon.png"):
+    shutil.copyfile(ICON_SRC / name, DOCS / name)
+
 # sw.js はシリーズ共通のため、ここでは書かない。
 # 正典は シリーズ管理/tools/sw.js.tpl 、配布は apply_sw.py が行う。
 # VERSION が配信HTMLの内容ハッシュから決まるので、必ず「このビルドの後」に実行すること:
 #     python ../シリーズ管理/tools/apply_sw.py tokei
-
-
-def draw24(bg="#ffffff", fg="#000000"):
-    """白地24グリッドの時計モチーフ: 帳面の枠+針と4つの目盛りだけ。
-    曲線(円の文字盤)はドット絵だと汚く見えるので使わない(2026-08-31ユーザー指摘)"""
-    im = Image.new("RGB", (24, 24), bg)
-    d = ImageDraw.Draw(im)
-    d.rectangle([3, 3, 20, 20], outline=fg)    # 枠(時計なので正方形。帳面比率の縦長にしない=2026-08-31ユーザー指摘)
-    d.rectangle([11, 5, 12, 6], fill=fg)       # 目盛り 12時(枠から1px離す。癒着すると枠の瘤に見える)
-    d.rectangle([11, 17, 12, 18], fill=fg)     # 目盛り 6時
-    d.rectangle([5, 11, 6, 12], fill=fg)       # 目盛り 9時
-    d.rectangle([17, 11, 18, 12], fill=fg)     # 目盛り 3時
-    d.rectangle([11, 8, 12, 12], fill=fg)      # 長針(12時へ。目盛りとも1pxあける)
-    d.rectangle([11, 11, 15, 12], fill=fg)     # 短針(3時へ)
-    return im
-
-
-def icon(px, name, cell):
-    base = draw24().resize((24 * cell, 24 * cell), Image.NEAREST)
-    cv = Image.new("RGB", (px, px), "#ffffff")
-    off = (px - 24 * cell) // 2
-    cv.paste(base, (off, off))
-    cv.save(DOCS / name)
-
-
-icon(512, "icon-512.png", 21)
-icon(192, "icon-192.png", 8)
-icon(180, "apple-touch-icon.png", 7)
-icon(512, "icon-maskable-512.png", 13)  # maskable: 図案を中央61%に収めAndroidの切り抜きに耐える
 
 # 起動スプラッシュ(無地。ダーク起動時に白く光らないための地色だけを敷く)
 for w, h, lw, lh, r in SPLASH:
