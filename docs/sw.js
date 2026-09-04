@@ -18,7 +18,7 @@
      - Cache Storage は SW スコープ単位ではなく「オリジン単位」で共有される。
        5本は同一の eggyolk049.github.io にあるため、削除は必ず自分の接頭辞に限定する */
 
-const VERSION = '2026-09-04-f87520ded5';
+const VERSION = '2026-09-04-a1fb82e7ed';
 const SLUG    = 'sumi-tokei';
 const PREFIX  = SLUG + '-';
 const CACHE   = PREFIX + VERSION;

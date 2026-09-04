@@ -467,7 +467,9 @@ function renderSheet(){
       + '</div></div></section>'
       + '<section class="box"><h2>調子が悪いとき</h2><div class="setrow">'
       + '<div class="d">時刻があやしいときは、上の「いますぐあわせる」。それでも合わないときは、通信(VPN・フィルタリング)をたしかめてから、さいよみこみしてください。</div>'
-      + '<button class="sbtn" data-act="reload">さいよみこみ</button></div></section>'
+      + '<button class="sbtn" data-act="reload">さいよみこみ</button>'
+      + '<button class="sbtn" data-act="repair">アプリを直す（キャッシュ更新）</button>'
+      + '<div class="d">設定と秒読みには触れません。さいよみこみで直らないときに試してください。</div></div></section>'
       + '<p class="d" data-act="ver-reload" style="text-align:center;margin:4px 0 2px;color:var(--muted);font-size:11px">chroia時計 ' + APP_VER + ' — タップで更新を確認</p>';
   }
   el.ovl.innerHTML = '<div class="overlay" data-act="close"><div class="sheet" data-act="noop">'
@@ -607,6 +609,21 @@ document.addEventListener('click', e => {
   }
   else if(act === 'cdstop') stopCd();
   else if(act === 'reload') location.reload();
+  else if(act === 'repair'){ // 自分の Service Worker を外し、自分のキャッシュだけ消して読み込み直す(同一オリジンの他アプリは触らない)
+    (async () => {
+      try{
+        if('serviceWorker' in navigator){
+          const rg = await navigator.serviceWorker.getRegistration();
+          if(rg) await rg.unregister(); // 自分のスコープのみ
+        }
+        if(window.caches){
+          const ks = await caches.keys();
+          for(const k of ks) if(k.indexOf('sumi-tokei-') === 0) await caches.delete(k); // オリジン共有のため自分の分だけ
+        }
+      }catch(e){}
+      location.reload();
+    })();
+  }
 });
 document.addEventListener('keydown', e => {
   if(e.key === 'Escape' && ui.sheet) closeSheet();
